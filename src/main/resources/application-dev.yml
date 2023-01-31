@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: THERMAX-SFDC-INTERFACE
+
+  datasource:
+    url: 'jdbc:postgresql://localhost:6432/#{dbName}#?user=#{dbUsername}#&password=#{dbPassword}#&prepareThreshold=0'
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: public
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  batch:
+    job:
+      enabled: false
+    initialize-schema: always
+
+
+management:
+  endpoint:
+    health:
+      group:
+        liveliness:
+          include: livenessProbe,cacheCheck
+      show-details: always
+    loggers:
+      enabled: true
+    metrics:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+server:
+  port: 7071
+  shutdown: graceful
+
+resilience4j:
+  ratelimiter:
+    rateLimiterAspectOrder: 1
+    instances:
+      getAccountsRateLimit:
+        limit-for-period: 2
+        limit-refresh-period: 5s
+        timeout-duration: 1s
+  circuitbreaker:
+    circuitBreakerAspectOrder: 2
+    instances:
+      updateAccountCB:
+        failure-rate-threshold: 80
+        sliding-window-size: 10
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 1s
+      getAccountInfoCB:
+        failure-rate-threshold: 80
+        sliding-window-size: 10
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 1s
+
+  retry:
+    retryAspectOrder: 3
+    instances:
+      updateAccountRetry:
+        max-attempts: 5
+        wait-duration: 2s
+        retry-exceptions: org.springframework.web.client.ResourceAccessException
+
+feign:
+  client:
+    thermax:
+      base-url: https://thermax--tmxdev.my.salesforce.com/services
+sfdc:
+  grant-type: password
+  client-id: 3MVG9cbS6twd6G6cc1k_NMJlXNoDgU4w6S9r.x2CenLtpdt5Besc_mpJK9usoXK.pvzcJgRkvgUUCRmjKZkmq
+  client-secret: 0F77199455BF11F06C995B6E1FA7C6B7637E96F1F2D352952F1C70B565253286
+  username: nagarro_intadmin@thermaxprod.com.tmxdev
+  password: Thermax@123
+
+

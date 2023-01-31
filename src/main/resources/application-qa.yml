@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: THERMAX-SFDC-INTERFACE
+
+management:
+  endpoint:
+    health:
+      group:
+        liveliness:
+          include: livenessProbe,cacheCheck
+      show-details: always
+    loggers:
+      enabled: true
+    metrics:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+server:
+  port: 7071
+  shutdown: graceful
+
+resilience4j:
+  ratelimiter:
+    rateLimiterAspectOrder: 1
+    instances:
+      getAccountsRateLimit:
+        limit-for-period: 2
+        limit-refresh-period: 5s
+        timeout-duration: 1s
+  circuitbreaker:
+    circuitBreakerAspectOrder: 2
+    instances:
+      updateAccountCB:
+        failure-rate-threshold: 80
+        sliding-window-size: 10
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 1s
+      getAccountInfoCB:
+        failure-rate-threshold: 80
+        sliding-window-size: 10
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 1s
+
+  retry:
+    retryAspectOrder: 3
+    instances:
+      updateAccountRetry:
+        max-attempts: 5
+        wait-duration: 2s
+        retry-exceptions: org.springframework.web.client.ResourceAccessException
+feign:
+  client:
+    thermax:
+      base-url: https://thermax--thermaxprt.my.salesforce.com/services
+
+sfdc:
+  grant-type: password
+  client-id: 3MVG9iLRabl2Tf4gmZh3d7bm77JlyKi3x4IjgyAE22wuOWtCsiWWET13n4clUooUHGE6dHpbLHTq5UUConvUV
+  client-secret: F6C220571CB9A04702705FFCDBC872B821A60FA81691BAB8838BCD1C0801C287
+  username: integrationuser@nagarro.com.tmxprt
+  password: Thermax@123
